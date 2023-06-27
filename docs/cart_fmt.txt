@@ -1,0 +1,111 @@
+Subject:      Bankzilla Lives!
+From:         khorton@tech.iupui.edu (Kevin Horton)
+Date:         1996/04/30
+Message-Id:   <4m5jmj$7k4@aim.et.iupui.edu>
+Organization: Purdue University School of Engr. and Tech. At Indianapolis,IN
+Newsgroups:   rec.games.video.classic
+
+I managed to cheat *badly* and get all of these into *3* chips! :
+
+2K
+4K
+8K (01fe/11fe)
+8K (1ff8/1ff9)
+16K (1ff6-1ff9)
+32K (1ff4-1ffa) +SC
+16K+SC
+12K+RAM+
+
+I did all this with just 3 chips-  6116 2K RAM, 27512 EPROM, and a 74279
+quad latch.  Another EPROM with games is required to play games, but the
+basic complete BS circuitry is just those 3 chips.   The way it works, is
+the EPROM acts as my address decoder for the 74279 latch.  The latch
+stores what bank the program is in.  It also does the /CE enables for
+both the game EPROM and the RAM.  I cheated and stole the R/W signal for the
+RAM.  Why bother with 2-3 more chips when I can just use R/W? :-)
+
+Since Bankzilla is a stand-alone unit, I can use the R/W line.  Anyways,
+the address decoder also decodes the 1fe0-1ff7 and 1fe0-1fe7 ranges for
+the Parker Bros. and M-network carts, respectively.  Now, I just need a
+latch for the m-net carts, a 7431 and 74170 added for these two formats,
+a 74147 for Tigervision carts, and the Supercharger stuff, and I'm done!
+
+Here's what I got to play on it last night:
+
+Air-Sea Battle   (2K)
+Frogger          (4K)
+Joust            (8K f8/f9)
+Jr. Pac-Man      (16K + Super Chip)
+Double Dragon    (16K)
+Tunnel Runner    (12K and RAM+)
+Omega Race       (12K and RAM+)
+
+Sadly, Mountain King may be corrupt, 'cause it doesn't work on Bankzilla.
+Also, since these games only have 3 banks instead of 4, the games can get
+caught in the 4th non-valid bank because the way my circuit is designed.
+I need to make a fake bank that switches to the 1st bank if it gets stuck
+in the 4th bank. (which it liked to do).  I had to manually set it to the
+first bank and reset the processor, but it worked!  The 01fe/11fe format
+isn't all it appears to be, it seems.  These games don't work with bankzilla
+for some reason.  I've tried both my read and Bruce's, so I dunno.
+I couldn't try the 32K game(s) because I don't have any.  (hint, hint! ;-)
+Now, if I can just figure out how Mattel did the RAM on Burgertime, I'd
+be set.
+
+Oh yeah, a note about RAM+ and the Superchip.  I did a little code-snooping
+and figured these out.  Both work in exactly the same way, except RAM+
+is 256 bytes of RAM, while the Superchip is only 128.  Each has a write
+port and a read port:
+
+Superchip:
+write:1000-107F
+read: 1080-10FF
+
+RAM+:
+write:1000-10FF
+read: 1100-11FF
+
+To store a byte, you do an STA to the write port.  To read it back, you
+do an LDA to the read port.  Each byte has a pair of addresses- to write to
+it, you use one address.  To read from it, you use another.  Each byte is
+paired like so:  1000,1100 (write,read);  1001,1101; 1002,1102; etc.
+
+some code:
+
+1000 LDA #$69    ;byte we want to save
+1002 STA $1000   ;save it
+.
+.
+.
+rest of code
+.
+.
+.
+1231 LDA $1100  ;read saved byte
+1234 ...        ;accumulator now holds $69, which is what we saved earlier.
+
+Note that instructions like INC $1000 won't work, because 1000 is *only*
+a write port, and *not* a read port.  Executing such an instruction will
+corrupt the memory location!  To increment the first byte:
+
+1000 LDX $1100
+1003 INX
+1004 STX $1000
+
+Not pretty, but then again, who said the 2600 was?!?  ;-)
+
+I for one am glad to finally figure out both RAM+ and the Superchip.  One
+less thing to worry about.  My goal of Bankzilla is now in sight!  Just
+a few more methods and I'm D-O-N-E done!
+
+BTW, I may have schematics of my Bankzilla proving circuit avalible
+soon.  e-mail me if you want 'em
+
+--
+-----------------------------------------------------------------------
+| \_ \_  \_\_\_  \_  \_  \_   \_  \_           B5(6) t w g+ s-- r-    |
+|  \_\_   \_\_    \_\_    \_   \_\_\_   &h48,&h65,&h6C,&h6C,&h6F,&h21 |
+|   \_ \_  \_\_\_  \_      \_   \_  \_   __ khorton@tech.iupui.edu __ |
+|     "It's 5:50 AM.  Do you know        \/__Can *YOU* write 8085__\/ |
+|     where your stack pointer is?"        \/      assembly?     \/   |
+-----------------------------------------------------------------------
